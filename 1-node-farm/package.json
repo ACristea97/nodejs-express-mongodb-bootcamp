@@ -1,0 +1,21 @@
+{
+  "name": "node-farm",
+  "version": "1.0.0",
+  "description": "Learning NodeJS",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ACristea97/nodejs-express-mongodb-bootcamp.git"
+  },
+  "keywords": [
+    "NodeJS",
+    "http-server"
+  ],
+  "author": "Cristea Adrian-Petru",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp/issues"
+  },
+  "homepage": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp#readme",
+  "scripts": {}
+}
