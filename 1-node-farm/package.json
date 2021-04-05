@@ -17,5 +17,10 @@
     "url": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp/issues"
   },
   "homepage": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp#readme",
-  "scripts": {}
+  "devDependencies": {
+    "nodemon": "~2.0.7"
+  },
+  "scripts": {
+    "start": "nodemon.cmd http-server/index.js"
+  }
 }
