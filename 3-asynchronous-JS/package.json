@@ -1,0 +1,26 @@
+{
+  "name": "3-asynchronous-js",
+  "version": "1.0.0",
+  "description": "Async-Await/Promises tutorials",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ACristea97/nodejs-express-mongodb-bootcamp.git"
+  },
+  "scripts": {
+    "start": "nodemon.cmd index.js"
+  },
+  "author": "Cristea Adrian-Petru",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp/issues"
+  },
+  "homepage": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp#readme",
+  "dependencies": {
+    "superagent": "^6.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "~2.0.7",
+    "prettier": "^2.2.1"
+  }
+}
