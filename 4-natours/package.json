@@ -1,0 +1,32 @@
+{
+  "name": "4-natours",
+  "version": "1.0.0",
+  "description": "Natours project.",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ACristea97/nodejs-express-mongodb-bootcamp.git"
+  },
+  "author": "Cristea Adrian-Petru",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp/issues"
+  },
+  "homepage": "https://github.com/ACristea97/nodejs-express-mongodb-bootcamp#readme",
+  "type": "commonjs",
+  "engines": {
+    "node": ">14.0.0"
+  },
+  "scripts": {
+    "start": "nodemon.cmd app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.24.0",
+    "eslint-plugin-node": "^11.1.0",
+    "nodemon": "^2.0.7"
+  }
+}
