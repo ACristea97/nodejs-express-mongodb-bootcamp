@@ -1,8 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 
-const ToursApi = require('./api/ToursApi.js');
-const UsersApi = require('./api/UsersApi.js');
+const mountRouters = require('./utils.js');
 
 const app = express();
 
@@ -26,34 +25,7 @@ app.use((request, response, next) => {
     next();
 });
 
-const port = 3000;
-
 /* ROUTE DEPENDENT MIDDLEWARES */
+mountRouters(app);
 
-// Tours API
-const toursApi = new ToursApi();
-app.route(toursApi.routes.RESOURCES)
-    .post(toursApi.create)
-    .get(toursApi.read);
-
-app.route(toursApi.routes.RESOURCE_AT_ID)
-    .get(toursApi.readById)
-    .patch(toursApi.update('PATCH'))
-    .put(toursApi.update('PUT'))
-    .delete(toursApi.delete);
-
-// Users API
-const userApi = new UsersApi();
-app.route(userApi.routes.RESOURCES)
-    .post(userApi.create)
-    .get(userApi.read);
-
-app.route(userApi.routes.RESOURCE_AT_ID)
-    .get(userApi.readById)
-    .patch(userApi.update('PATCH'))
-    .put(userApi.update('PUT'))
-    .delete(userApi.delete);
-
-app.listen(port, () => {
-    console.log(`App running on port ${port}...`);
-});
+module.exports = app;

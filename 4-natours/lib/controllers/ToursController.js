@@ -1,24 +1,72 @@
 const fs = require('fs');
-const path = require('path');
 
-const AbstractResourceApi = require('./AbstractResourceApi.js');
+const AbstractResourceApi = require('./AbstractController.js');
 
-const DATA_PATH = path.join(`${__dirname}`, '../dev-data/data/tours-simple.json');
-let tours = JSON.parse(fs.readFileSync(DATA_PATH));
+const tourSchema = {
+    name: {
+        required: true,
+        type: 'string'
+    },
+    maxGroupSize: {
+        required: false,
+        type: 'number'
+    },
+    duration: {
+        required: true,
+        type: 'number'
+    },
+    difficulty: {
+        required: true,
+        type: 'string'
+    },
+    ratingsAverage: {
+        required: false,
+        type: 'number'
+    },
+    ratingsQuantity: {
+        required: false,
+        type: 'number'
+    },
+    price: {
+        required: true,
+        type: 'number'
+    },
+    summary: {
+        required: true,
+        type: 'string'
+    },
+    description: {
+        required: true,
+        type: 'string'
+    },
+    imageCover: {
+        required: false,
+        type: 'string'
+    },
+    images: {
+        required: false,
+        type: 'Array<string>'
+    },
+    startDates: {
+        required: false,
+        type: 'Array<string>'
+    }
+};
 
-class ToursApi extends AbstractResourceApi{
+class ToursController extends AbstractResourceApi{
     constructor () {
-        super('tours');
+        super('tours', tourSchema);
     }
 
     /**
      * @override
      */
     create(request, response) {
-        const newTour = Object.assign({ id: tours.length }, request.body);
-        tours.push(newTour);
+        const id = this.resources.size;
+        const tour = Object.assign({ id }, request.body);
+        this.resources.set(id, tour);
 
-        fs.writeFile(DATA_PATH, JSON.stringify(tours), (error) => {
+        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
             if (error)
                 return console.log(error.message);
 
@@ -26,7 +74,7 @@ class ToursApi extends AbstractResourceApi{
                 status: 'success',
                 requestedAt: request.requestTime,
                 data: {
-                    tour: newTour
+                    tour
                 }
             });
         });
@@ -39,8 +87,8 @@ class ToursApi extends AbstractResourceApi{
         response.status(200).json({
             status: 'success',
             requestedAt: request.requestTime,
-            results: tours.length,
-            data: { tours }
+            results: this.resources.size,
+            data: { tours: Array.from(this.resources.values()) }
         });
     }
 
@@ -49,14 +97,7 @@ class ToursApi extends AbstractResourceApi{
      */
     readById(request, response) {
         const id = request.params.id * 1;
-        const tour = tours.find(element => element.id === id);
-
-        if (!tour)
-            return response.status(404).json({
-                status: 'fail',
-                requestedAt: request.requestTime,
-                message: 'Invalid Resource Id.'
-            });
+        const tour = this.resources.get(id);
 
         response.status(200).json({
             status: 'success',
@@ -72,34 +113,31 @@ class ToursApi extends AbstractResourceApi{
      */
     update(httpMethod) {
         if (httpMethod === 'PATCH')
-            return this.#updatePartially;
+            return this.#updatePartially.bind(this);
         else if (httpMethod === 'PUT')
-            return this.#updateFully;
+            return this.#updateFully.bind(this);
     }
 
     #updatePartially(request, response) {
         const id = request.params.id * 1;
-        const propertiesToUpdate = request.body;
+        const tour = this.resources.get(id);
 
-        if (id > tours.length || id < 0)
-            return response.status(404).json({
-                status: 'fail',
-                requestedAt: request.requestTime,
-                message: 'Invalid Resource Id.'
-            });
+        const propertiesToUpdate = request.body;
 
         const propertiesArrays = Object.entries(propertiesToUpdate);
         for (const [property, value] of propertiesArrays)
-            if (property in tours[id])
-                tours[id][property] = value;
+            if (property in tour)
+                tour[property] = value;
             else
                 return response.status(404).json({
                     status: 'fail',
                     requestedAt: request.requestTime,
-                    message: `Inexistent property: ${property} provided.`
+                    message: `Property: ${property} doesn't exist.`
                 });
 
-        fs.writeFile(DATA_PATH, JSON.stringify(tours), (error) => {
+        this.resources.set(id, tour);
+
+        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
             if (error)
                 return console.log(error.message);
 
@@ -107,7 +145,7 @@ class ToursApi extends AbstractResourceApi{
                 status: 'success',
                 requestedAt: request.requestTime,
                 data: {
-                    tour: tours[id]
+                    tour
                 }
             });
         });
@@ -117,16 +155,9 @@ class ToursApi extends AbstractResourceApi{
         const id = request.params.id * 1;
         const updatedTour = request.body;
 
-        if (id > tours.length || id < 0)
-            return response.status(404).json({
-                status: 'fail',
-                requestedAt: request.requestTime,
-                message: 'Invalid Resource Id.'
-            });
+        this.resources.set(id, { id, ...updatedTour });
 
-        tours[id] = { id, ...updatedTour };
-
-        fs.writeFile(DATA_PATH, JSON.stringify(tours), (error) => {
+        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
             if (error)
                 return console.log(error.message);
 
@@ -146,24 +177,14 @@ class ToursApi extends AbstractResourceApi{
     delete(request, response) {
         const id = request.params.id * 1;
 
-        if (id > tours.length || id < 0)
-            return response.status(404).json({
-                status: 'fail',
-                requestedAt: request.requestTime,
-                message: 'Invalid Resource Id.'
-            });
-
-        const prevToursLength = tours.length;
-        tours = tours.filter((element) => element.id !== id );
-
-        if (prevToursLength === tours.length)
+        if (!this.resources.delete(id))
             return response.status(404).json({
                 status: 'fail',
                 requestedAt: request.requestTime,
                 message: 'No Resource Deleted.'
             });
 
-        fs.writeFile(DATA_PATH, JSON.stringify(tours), (error) => {
+        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
             if (error)
                 return console.log(error.message);
 
@@ -176,4 +197,4 @@ class ToursApi extends AbstractResourceApi{
     }
 }
 
-module.exports = ToursApi;
+module.exports = ToursController;
