@@ -64,6 +64,7 @@ class ToursController extends AbstractResourceApi{
     create(request, response) {
         const id = this.resources.size;
         const tour = Object.assign({ id }, request.body);
+
         this.resources.set(id, tour);
 
         fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {

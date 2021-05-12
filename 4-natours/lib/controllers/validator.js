@@ -1,11 +1,10 @@
-function validate(object, schema) {
+function validate(object, schema, method) {
     let validatedAttributes = 0;
 
     for (const [attribute, properties] of Object.entries(schema)) {
-        if (properties.required) {
-            if (!object[attribute]) {
-                return false;
-            }
+        /* Update operation shouldn't validate all the required properties from the schema. */
+        if (!(method === 'PATCH') && properties.required && !object[attribute]) {
+            return false;
         }
 
         const foundAttribute = object[attribute];

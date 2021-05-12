@@ -29,7 +29,7 @@ function mountRouterMiddleware(application, ResourceController) {
 
     router.route(resourceController.routes.AT_ID)
         .get(readResourceById)
-        .patch(patchUpdateResource)
+        .patch(validateBody, patchUpdateResource)
         .put(validateBody, putUpdateResource)
         .delete(deleteResource);
 }

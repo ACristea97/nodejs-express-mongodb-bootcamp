@@ -56,9 +56,8 @@ class AbstractController {
     }
 
     validateId(request, response, next, id) {
-        if (id > this.resources.length || id < 0
-            || !(this.resources.find(elem => elem.id === id)))
-            return response.status(404).json({
+        if (id > this.resources.size || id < 0)
+            return response.status(400).json({
                 status: 'fail',
                 requestedAt: request.requestTime,
                 message: 'Invalid Resource Id.'
@@ -68,10 +67,9 @@ class AbstractController {
     }
 
     validateBody(request, response, next) {
-        const id = request.params.id * 1;
-        const resource = id ? this.resources.get(id) : request.body;
+        const { method, body: resource } = request;
 
-        if(!validate(resource, this.schema))
+        if(!validate(resource, this.schema, method))
             return response.status(400).json({
                 status: 'fail',
                 requestedAt: request.requestTime,

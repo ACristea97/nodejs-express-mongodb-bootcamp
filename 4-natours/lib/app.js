@@ -16,7 +16,9 @@ const app = express();
 * route's middleware responds/doesn't call the next function,
 * THE MIDDLEWARE DEFINED AFTER IT will not even be executed.
 * */
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development')
+    app.use(morgan('dev'));
+
 app.use(express.json());
 app.use((request, response, next) => {
     request.requestTime = new Date().toISOString();
