@@ -1,12 +1,8 @@
-const AbstractResourceApi = require('./AbstractController.js');
+const AbstractController = require('./AbstractController.js');
 
-const userSchema = {
-
-};
-
-class UsersController extends AbstractResourceApi{
+class UsersController extends AbstractController{
     constructor () {
-        super('users', userSchema);
+        super('users');
     }
 }
 

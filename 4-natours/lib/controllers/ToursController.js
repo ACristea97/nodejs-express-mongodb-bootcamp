@@ -1,75 +1,31 @@
-const fs = require('fs');
+const {
+    logger,
+    createLoggingMessage,
 
-const AbstractResourceApi = require('./AbstractController.js');
+    LoggingCodes
+} = require('../logger.js');
 
-const tourSchema = {
-    name: {
-        required: true,
-        type: 'string'
-    },
-    maxGroupSize: {
-        required: false,
-        type: 'number'
-    },
-    duration: {
-        required: true,
-        type: 'number'
-    },
-    difficulty: {
-        required: true,
-        type: 'string'
-    },
-    ratingsAverage: {
-        required: false,
-        type: 'number'
-    },
-    ratingsQuantity: {
-        required: false,
-        type: 'number'
-    },
-    price: {
-        required: true,
-        type: 'number'
-    },
-    summary: {
-        required: true,
-        type: 'string'
-    },
-    description: {
-        required: true,
-        type: 'string'
-    },
-    imageCover: {
-        required: false,
-        type: 'string'
-    },
-    images: {
-        required: false,
-        type: 'Array<string>'
-    },
-    startDates: {
-        required: false,
-        type: 'Array<string>'
-    }
-};
+const Tour = require('../models/ToursModel.js');
+const resourceName = 'tour';
 
-class ToursController extends AbstractResourceApi{
+const AbstractController = require('./AbstractController.js');
+
+class ToursController extends AbstractController{
     constructor () {
-        super('tours', tourSchema);
+        super('tours');
     }
 
     /**
      * @override
      */
-    create(request, response) {
-        const id = this.resources.size;
-        const tour = Object.assign({ id }, request.body);
+    async create(request, response) {
 
-        this.resources.set(id, tour);
+        try {
+            const tour = await Tour.create(request.body);
 
-        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
-            if (error)
-                return console.log(error.message);
+            logger.debug(
+                createLoggingMessage(LoggingCodes.CREATED_RESOURCE, resourceName)
+            );
 
             response.status(201).json({
                 status: 'success',
@@ -78,69 +34,85 @@ class ToursController extends AbstractResourceApi{
                     tour
                 }
             });
-        });
+
+        } catch (error) {
+            logger.error(error);
+
+            response.status(400).json({
+                status: 'failure',
+                requestedAt: request.requestTime,
+                message: error.message
+            });
+        }
+
     }
 
     /**
      * @override
      */
-    read(request, response) {
-        response.status(200).json({
-            status: 'success',
-            requestedAt: request.requestTime,
-            results: this.resources.size,
-            data: { tours: Array.from(this.resources.values()) }
-        });
-    }
+    async read(request, response) {
 
-    /**
-     * @override
-     */
-    readById(request, response) {
-        const id = request.params.id * 1;
-        const tour = this.resources.get(id);
+        try {
 
-        response.status(200).json({
-            status: 'success',
-            requestedAt: request.requestTime,
-            data: {
-                tour
+            // Build the query
+            const filters = {};
+
+            for (const { by, operation, value } of request.query.filter) {
+                if (!by || !operation || !value)
+                    continue;
+
+                if (operation === 'equals')
+                    filters[by] = value;
+                else
+                    filters[by] = {
+                        [`$${operation}`]: value
+                    }
             }
-        });
+
+            const query = Tour.find(filters);
+
+            // const tours = await Tour.find().where('property').equals(value)
+
+            // Execute query
+            const tours = await query;
+
+            logger.debug(
+                createLoggingMessage(LoggingCodes.READ_RESOURCE, resourceName)
+            );
+
+            response.status(200).json({
+                status: 'success',
+                requestedAt: request.requestTime,
+                results: tours.length,
+                data: {
+                    tours
+                }
+            });
+
+        } catch (error) {
+            logger.error(error);
+
+            response.status(404).json({
+                status: 'failure',
+                requestedAt: request.requestTime,
+                message: error.message
+            });
+        }
+
     }
 
     /**
      * @override
      */
-    update(httpMethod) {
-        if (httpMethod === 'PATCH')
-            return this.#updatePartially.bind(this);
-        else if (httpMethod === 'PUT')
-            return this.#updateFully.bind(this);
-    }
+    async readById(request, response) {
 
-    #updatePartially(request, response) {
-        const id = request.params.id * 1;
-        const tour = this.resources.get(id);
+        try {
+            // Tour.findOne({ _id: request.params.id });
+            const tour = await Tour.findById(request.params.id);
 
-        const propertiesToUpdate = request.body;
-
-        const propertiesArrays = Object.entries(propertiesToUpdate);
-        for (const [property, value] of propertiesArrays)
-            if (property in tour)
-                tour[property] = value;
-            else
-                return response.status(404).json({
-                    status: 'fail',
-                    requestedAt: request.requestTime,
-                    message: `Property: ${property} doesn't exist.`
-                });
-
-        this.resources.set(id, tour);
-
-        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
-            if (error)
-                return console.log(error.message);
+            logger.debug(
+                createLoggingMessage(LoggingCodes.READ_BY_ID_RESOURCE, resourceName)
+            );
 
             response.status(200).json({
                 status: 'success',
@@ -149,52 +121,82 @@ class ToursController extends AbstractResourceApi{
                     tour
                 }
             });
-        });
-    }
 
-    #updateFully(request, response) {
-        const id = request.params.id * 1;
-        const updatedTour = request.body;
+        } catch (error) {
+            logger.error(error);
 
-        this.resources.set(id, { id, ...updatedTour });
-
-        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
-            if (error)
-                return console.log(error.message);
-
-            response.status(200).json({
-                status: 'success',
+            response.status(404).json({
+                status: 'failure',
                 requestedAt: request.requestTime,
-                data: {
-                    tour: updatedTour
-                }
+                message: error.message
             });
-        });
+        }
+
     }
 
     /**
      * @override
      */
-    delete(request, response) {
-        const id = request.params.id * 1;
+    async update(request, response) {
 
-        if (!this.resources.delete(id))
-            return response.status(404).json({
-                status: 'fail',
-                requestedAt: request.requestTime,
-                message: 'No Resource Deleted.'
+        try {
+            const tour = await Tour.findByIdAndUpdate(request.params.id, request.body, {
+                new: true,
+                runValidators: true
             });
 
-        fs.writeFile(this.dataPath, JSON.stringify(Array.from(this.resources.values())), (error) => {
-            if (error)
-                return console.log(error.message);
+            logger.debug(
+                createLoggingMessage(LoggingCodes.UPDATE_RESOURCE, resourceName)
+            );
 
             response.status(200).json({
                 status: 'success',
                 requestedAt: request.requestTime,
-                data: `${id}`
+                data: {
+                    tour
+                }
             });
-        });
+
+        } catch (error) {
+            logger.error(error);
+
+            response.status(404).json({
+                status: 'failure',
+                requestedAt: request.requestTime,
+                message: error.message
+            });
+        }
+
+    }
+
+    /**
+     * @override
+     */
+    async delete(request, response) {
+
+        try {
+            await Tour.findByIdAndDelete(request.params.id);
+
+            logger.debug(
+                createLoggingMessage(LoggingCodes.DELETE_RESOURCE, resourceName)
+            );
+
+            response.status(204).json({
+                status: 'success',
+                requestedAt: request.requestTime,
+                data: null
+            });
+
+        } catch (error) {
+            logger.error(error);
+
+            response.status(404).json({
+                status: 'failure',
+                requestedAt: request.requestTime,
+                message: error.message
+            });
+        }
+
     }
 }
 
